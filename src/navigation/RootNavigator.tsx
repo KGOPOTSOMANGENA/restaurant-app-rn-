@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LandingStack from "./LandingStack";
 import AppStack from "./AppStack";
+import AdminStack from "./AdminStack"; 
 import { useAuthStore } from "../store/authStore";
 import { ActivityIndicator, View } from "react-native";
 
@@ -24,10 +25,13 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
-          // BEFORE LOGIN → LandingPage + Login + Register + Food/Chef Details
+          // BEFORE LOGIN
           <Stack.Screen name="LandingStack" component={LandingStack} />
+        ) : user.role === "admin" ? (
+          // ADMIN AFTER LOGIN
+          <Stack.Screen name="AdminStack" component={AdminStack} />
         ) : (
-          // AFTER LOGIN → HomeScreen
+          // NORMAL USER AFTER LOGIN
           <Stack.Screen name="AppStack" component={AppStack} />
         )}
       </Stack.Navigator>

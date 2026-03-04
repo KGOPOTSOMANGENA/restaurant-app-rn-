@@ -1,21 +1,22 @@
+// src/store/authStore.ts
 import { create } from "zustand";
-import { 
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile 
+  updateProfile,
 } from "firebase/auth";
 import { auth, db } from "../services/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
 interface UserProfile {
   uid: string;
-  name: string;
-  surname: string;
-  phone: string;
-  address: string;
-  card: string;
+  name?: string;
+  surname?: string;
+  phone?: string;
+  address?: string;
+  card?: string;
   email: string;
-  role?: "admin" | "user";
+  role: "admin" | "user";
 }
 
 interface AuthStore {
@@ -38,6 +39,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   loading: false,
 
+  // ================= REGISTER (USER ONLY) =================
   register: async (data) => {
     set({ loading: true });
 
@@ -55,27 +57,61 @@ export const useAuthStore = create<AuthStore>((set) => ({
       address,
       card,
       email,
+      role: "user",
     });
 
-    set({ 
-      user: { uid: res.user.uid, name, surname, phone, address, card, email },
-      loading: false
+    set({
+      user: {
+        uid: res.user.uid,
+        name,
+        surname,
+        phone,
+        address,
+        card,
+        email,
+        role: "user",
+      },
+      loading: false,
     });
   },
 
+  // ================= LOGIN (USER + ADMIN) =================
   login: async (email, password) => {
     set({ loading: true });
+
     try {
       const res = await signInWithEmailAndPassword(auth, email, password);
+      const uid = res.user.uid;
 
-      const ref = doc(db, "users", res.user.uid);
-      const snap = await getDoc(ref);
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
 
-      if (!snap.exists()) {
-        throw new Error("No profile found for this user.");
+      if (userSnap.exists()) {
+        const data = userSnap.data() as UserProfile;
+
+        // 🔹 Special handling for admin account
+        if (
+          data.email === "kgopotsomangena42@gmail.com" &&
+          data.uid === "ikej6sm6WwXnBjpZJf7lNUI5WKU2"
+        ) {
+          set({
+            user: {
+              uid: "ikej6sm6WwXnBjpZJf7lNUI5WKU2",
+              email: "kgopotsomangena42@gmail.com",
+              name: "Kgopotso",
+              surname: "Mangena",
+              role: "admin",
+            },
+          });
+          return;
+        }
+
+        // 🔹 Regular user
+        set({ user: data });
+        return;
       }
 
-      set({ user: snap.data() as UserProfile });
+      throw new Error("No profile found for this account.");
     } catch (error: any) {
       let message = "Login failed. Please try again.";
 
@@ -97,5 +133,5 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     await auth.signOut();
     set({ user: null });
-  }
+  },
 }));

@@ -16,6 +16,7 @@ interface UserProfile {
   address?: string;
   card?: string;
   email: string;
+  role: 'admin' | 'user';
 }
 
 interface AuthStore {

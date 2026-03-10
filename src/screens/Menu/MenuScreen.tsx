@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, FlatList, Image, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import { View, FlatList, Image, TouchableOpacity, ScrollView, TextInput, StyleSheet } from "react-native";
 import { Text, Chip, ActivityIndicator } from "react-native-paper";
-import { db } from "../../services/firebase";
+import { db, auth } from "../../services/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
-import { getAuth } from "firebase/auth";
 
-export default function HomeScreen() {
+export default function MenuScreen() {
   const navigation = useNavigation<any>();
-  const auth = getAuth();
-
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
@@ -20,19 +17,15 @@ export default function HomeScreen() {
   const load = async () => {
     const catSnap = await getDocs(collection(db, "categories"));
     const itemSnap = await getDocs(collection(db, "menuItems"));
-
     const cats = catSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((c: any) => c.active);
     const menu = itemSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i: any) => i.active);
-
     setCategories(cats);
     setItems(menu);
     setFilteredItems(menu);
     setLoading(false);
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
     let temp = selectedCat === "all" ? items : items.filter((i) => i.categoryId === selectedCat);
@@ -40,36 +33,36 @@ export default function HomeScreen() {
     setFilteredItems(temp);
   }, [selectedCat, search, items]);
 
+  const handlePress = (item: any) => {
+    if (!auth.currentUser) {
+      alert("Please login or create an account to order.");
+      navigation.navigate("Login");
+      return;
+    }
+    navigation.navigate("AddToCart", { item });
+  };
+
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <ActivityIndicator />
-      </View>
-    );
+    return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
   }
 
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
-        <Text variant="headlineMedium">Menu</Text>
 
-        <TouchableOpacity
-          onPress={() => {
-            if (!auth.currentUser) navigation.navigate("Login");
-            else navigation.navigate("Profile");
-          }}
-        >
-          <Image source={require("../../../assets/categories/profile_placeholder.png")} style={{ width: 40, height: 40, borderRadius: 20 }} />
-        </TouchableOpacity>
-      </View>
+      {/* Header — no profile icon for guests */}
+      <Text variant="headlineMedium" style={{ marginBottom: 15, fontWeight: "bold" }}>
+        Menu
+      </Text>
 
+      {/* Search — same as HomeScreen */}
       <TextInput
         placeholder="Search food..."
         value={search}
         onChangeText={setSearch}
-        style={{ marginBottom: 15, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 10, height: 40 }}
+        style={styles.search}
       />
 
+      {/* Category chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }}>
         <Chip selected={selectedCat === "all"} onPress={() => setSelectedCat("all")} style={{ marginRight: 8 }}>
           All
@@ -81,16 +74,17 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
+      {/* Menu items — same row layout as HomeScreen */}
       <FlatList
         data={filteredItems}
         scrollEnabled={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={{ flexDirection: "row", padding: 10, marginBottom: 10, borderWidth: 1, borderColor: "#ddd", borderRadius: 10 }}
-            onPress={() => navigation.navigate("AddToCart", { item })}
+            style={styles.card}
+            onPress={() => handlePress(item)}
           >
-            <Image source={{ uri: item.imageUrl }} style={{ width: 80, height: 80, borderRadius: 10 }} />
+            <Image source={{ uri: item.imageUrl }} style={styles.image} />
             <View style={{ marginLeft: 10, flex: 1 }}>
               <Text variant="titleMedium">{item.name}</Text>
               <Text numberOfLines={2}>{item.description}</Text>
@@ -102,3 +96,15 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  search: {
+    marginBottom: 15, borderWidth: 1, borderColor: "#ddd",
+    borderRadius: 10, paddingHorizontal: 10, height: 40,
+  },
+  card: {
+    flexDirection: "row", padding: 10, marginBottom: 10,
+    borderWidth: 1, borderColor: "#ddd", borderRadius: 10,
+  },
+  image: { width: 80, height: 80, borderRadius: 10 },
+});

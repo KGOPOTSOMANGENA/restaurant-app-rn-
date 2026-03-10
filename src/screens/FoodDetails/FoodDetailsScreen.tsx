@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView } from "react-native";
 
+
 export default function FoodDetailsScreen({ route }: any) {
   const { title, image, description, time, price } = route.params;
 

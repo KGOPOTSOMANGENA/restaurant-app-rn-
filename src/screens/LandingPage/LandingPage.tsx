@@ -23,12 +23,17 @@ export default function LandingPage() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* TOP BAR */}
       <View style={styles.topBar}>
-        <Text style={styles.menuText}>Menu</Text>
+
+        {/* UPDATED: Menu is now clickable */}
+        <TouchableOpacity onPress={() => navigation.navigate("Menu")}>
+          <Text style={styles.menuText}>Menu</Text>
+        </TouchableOpacity>
 
         {/* Profile icon clickable → goes to Login */}
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
           <Image source={images.profile} style={styles.profileImg} />
         </TouchableOpacity>
+
       </View>
 
       {/* HERO */}

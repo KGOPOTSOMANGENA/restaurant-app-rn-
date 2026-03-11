@@ -20,7 +20,7 @@ export default function LandingStack() {
       <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
       <Stack.Screen name="ChefDetails" component={ChefDetailsScreen} />
 
-      {/* ✅ Guest can browse menu, add to cart, but gets blocked at checkout */}
+      {/* Guest can browse menu, add to cart, but gets blocked at checkout */}
       <Stack.Screen name="Menu" component={MenuScreen} />
       <Stack.Screen name="AddToCart" component={AddToCartScreen} />
       <Stack.Screen name="Cart" component={CartScreen} />

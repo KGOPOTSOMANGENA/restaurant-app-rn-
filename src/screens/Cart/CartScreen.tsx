@@ -2,13 +2,13 @@ import React, { useContext } from "react";
 import { View, FlatList, Image, StyleSheet } from "react-native";
 import { Text, Button, Divider } from "react-native-paper";
 import { CartContext } from "../../store/CartContext";
-import { auth } from "../../services/firebase";
 import { useNavigation } from "@react-navigation/native";
+import { useAuthStore } from "../../store/authStore"; // ✅ same source as RootNavigator
 
 export default function CartScreen() {
   const { cart, total } = useContext(CartContext);
   const navigation = useNavigation<any>();
-  const user = auth.currentUser;
+  const user = useAuthStore((s) => s.user); // ✅ correct user state
 
   return (
     <View style={styles.container}>
@@ -42,7 +42,7 @@ export default function CartScreen() {
           </View>
 
           {user ? (
-            // ✅ Logged in — normal checkout
+            //  Logged in — go to Checkout
             <Button
               mode="contained"
               onPress={() => navigation.navigate("Checkout")}
@@ -52,7 +52,7 @@ export default function CartScreen() {
               Checkout
             </Button>
           ) : (
-            // ✅ Guest — locked button, no navigation, no crash
+            // Guest — locked, no navigation, no crash
             <Button
               mode="contained"
               disabled

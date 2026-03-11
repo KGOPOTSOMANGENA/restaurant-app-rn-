@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, FlatList, Image, TouchableOpacity, ScrollView, TextInput, StyleSheet } from "react-native";
 import { Text, Chip, ActivityIndicator } from "react-native-paper";
-import { db, auth } from "../../services/firebase";
+import { db } from "../../services/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 
@@ -33,15 +33,6 @@ export default function MenuScreen() {
     setFilteredItems(temp);
   }, [selectedCat, search, items]);
 
-  const handlePress = (item: any) => {
-    if (!auth.currentUser) {
-      alert("Please login or create an account to order.");
-      navigation.navigate("Login");
-      return;
-    }
-    navigation.navigate("AddToCart", { item });
-  };
-
   if (loading) {
     return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator /></View>;
   }
@@ -49,12 +40,10 @@ export default function MenuScreen() {
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
 
-      {/* Header — no profile icon for guests */}
       <Text variant="headlineMedium" style={{ marginBottom: 15, fontWeight: "bold" }}>
         Menu
       </Text>
 
-      {/* Search — same as HomeScreen */}
       <TextInput
         placeholder="Search food..."
         value={search}
@@ -62,7 +51,6 @@ export default function MenuScreen() {
         style={styles.search}
       />
 
-      {/* Category chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }}>
         <Chip selected={selectedCat === "all"} onPress={() => setSelectedCat("all")} style={{ marginRight: 8 }}>
           All
@@ -74,7 +62,6 @@ export default function MenuScreen() {
         ))}
       </ScrollView>
 
-      {/* Menu items — same row layout as HomeScreen */}
       <FlatList
         data={filteredItems}
         scrollEnabled={false}
@@ -82,7 +69,7 @@ export default function MenuScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => handlePress(item)}
+            onPress={() => navigation.navigate("AddToCart", { item })}
           >
             <Image source={{ uri: item.imageUrl }} style={styles.image} />
             <View style={{ marginLeft: 10, flex: 1 }}>

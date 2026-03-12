@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect } from "react";
-import { View, Image, StyleSheet, ScrollView } from "react-native";
+import { View, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Text, TextInput, Button, Divider } from "react-native-paper";
 import { CartContext } from "../../store/CartContext";
 import { db, auth } from "../../services/firebase";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { useNavigation } from "@react-navigation/native";
 
 type Profile = {
   name: string;
@@ -30,6 +31,7 @@ export default function CheckoutScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [placing, setPlacing] = useState(false);
   const user = auth.currentUser;
+  const navigation = useNavigation<any>();
 
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -92,10 +94,15 @@ export default function CheckoutScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      {/* Purple header */}
+      {/* Purple header with back button */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
-        <Text style={styles.headerSub}>{cart.length} item{cart.length !== 1 ? "s" : ""} · R {total}</Text>
+        <Text style={styles.headerSub}>
+          {cart.length} item{cart.length !== 1 ? "s" : ""} · R {total}
+        </Text>
       </View>
 
       <View style={styles.body}>
@@ -230,9 +237,18 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: "purple",
-    paddingTop: 55,
+    paddingTop: 50,
     paddingBottom: 24,
     paddingHorizontal: 20,
+  },
+  backBtn: {
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  backArrow: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "bold",
   },
   headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
   headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },

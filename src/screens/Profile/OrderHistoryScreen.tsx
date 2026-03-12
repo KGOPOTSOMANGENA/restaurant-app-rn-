@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { Text, Chip, Divider, ActivityIndicator } from "react-native-paper";
 import { db } from "../../services/firebase";
 import { useAuthStore } from "../../store/authStore";
@@ -47,8 +47,16 @@ export default function OrderHistoryScreen() {
 
       {/* Header */}
       <View style={styles.header}>
+
+        {/* ✅ Back button */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+
         <Text style={styles.headerTitle}>My Orders</Text>
-        <Text style={styles.headerSub}>{orders.length} order{orders.length !== 1 ? "s" : ""} placed</Text>
+        <Text style={styles.headerSub}>
+          {orders.length} order{orders.length !== 1 ? "s" : ""} placed
+        </Text>
       </View>
 
       {orders.length === 0 ? (
@@ -98,7 +106,7 @@ export default function OrderHistoryScreen() {
                 <Divider style={styles.divider} />
 
                 {/* Delivery + Payment */}
-                <View style={styles.footer}>
+                <View style={styles.orderFooter}>
                   <Text style={styles.address}>📍 {item.address}</Text>
                   {item.cardLast4 && (
                     <Text style={styles.card4}>
@@ -122,9 +130,18 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: "purple",
-    paddingTop: 55,
+    paddingTop: 50,
     paddingBottom: 24,
     paddingHorizontal: 20,
+  },
+  backBtn: {
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  backArrow: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "bold",
   },
   headerTitle: {
     color: "#fff",
@@ -190,8 +207,8 @@ const styles = StyleSheet.create({
   itemName: { color: "#333", fontSize: 14 },
   itemPrice: { fontWeight: "bold", color: "purple" },
 
-  // Footer
-  footer: { marginTop: 4, gap: 4 },
+  // Order footer
+  orderFooter: { marginTop: 4, gap: 4 },
   address: { color: "#555", fontSize: 13 },
   card4: { color: "#888", fontSize: 12 },
 });

@@ -1,90 +1,86 @@
 import React from "react";
-import { StyleSheet, ScrollView } from "react-native";
+import { StyleSheet, ScrollView, View } from "react-native";
 import { Text, Card, Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 
 export default function AdminHomeScreen() {
   const navigation = useNavigation<any>();
 
+  const cards = [
+    {
+      icon: "🍽️",
+      title: "Menu Management",
+      desc: "Add, edit or remove food items",
+      btn: "Manage Menu",
+      route: "Menu Items",
+    },
+    {
+      icon: "📦",
+      title: "Orders",
+      desc: "View all customer orders",
+      btn: "View Orders",
+      route: "Orders",
+    },
+    {
+      icon: "📊",
+      title: "Analytics",
+      desc: "View sales statistics and performance",
+      btn: "View Analytics",
+      route: "Analytics",
+    },
+  ];
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Admin Dashboard</Text>
-      <Text style={styles.subtitle}>Welcome Admin</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      {/* MENU MANAGEMENT */}
-      <Card style={styles.card}>
-        <Card.Title title="Menu Management" />
-        <Card.Content>
-          <Text>Add, edit or remove food items</Text>
-        </Card.Content>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Admin Dashboard</Text>
+        <Text style={styles.headerSub}>Welcome back, Admin 👋</Text>
+      </View>
 
-        <Card.Actions>
-          <Button
-            mode="contained"
-            buttonColor="#6A0DAD"
-            onPress={() => navigation.navigate("Menu Items")}
-          >
-            Manage Menu
-          </Button>
-        </Card.Actions>
-      </Card>
-
-      {/* ORDERS */}
-      <Card style={styles.card}>
-        <Card.Title title="Orders" />
-        <Card.Content>
-          <Text>View all customer orders</Text>
-        </Card.Content>
-
-        <Card.Actions>
-          <Button
-            mode="contained"
-            buttonColor="#6A0DAD"
-            onPress={() => navigation.navigate("Orders")}
-          >
-            View Orders
-          </Button>
-        </Card.Actions>
-      </Card>
-
-      {/* ANALYTICS */}
-      <Card style={styles.card}>
-        <Card.Title title="Analytics" />
-        <Card.Content>
-          <Text>View sales statistics and performance</Text>
-        </Card.Content>
-
-        <Card.Actions>
-          <Button
-            mode="contained"
-            buttonColor="#6A0DAD"
-            onPress={() => navigation.navigate("Analytics")}
-          >
-            View Analytics
-          </Button>
-        </Card.Actions>
-      </Card>
+      <View style={styles.body}>
+        {cards.map((c) => (
+          <View key={c.route} style={styles.card}>
+            <Text style={styles.cardIcon}>{c.icon}</Text>
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>{c.title}</Text>
+              <Text style={styles.cardDesc}>{c.desc}</Text>
+            </View>
+            <Button
+              mode="contained"
+              buttonColor="purple"
+              style={styles.cardBtn}
+              onPress={() => navigation.navigate(c.route)}
+              contentStyle={{ paddingVertical: 2 }}
+            >
+              {c.btn}
+            </Button>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#F7F7F7",
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  subtitle: {
-    marginBottom: 20,
-    color: "gray",
-  },
+  headerTitle: { color: "#fff", fontSize: 26, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 14, marginTop: 4 },
+  body: { padding: 16 },
   card: {
-    marginBottom: 20,
-    borderRadius: 10,
+    backgroundColor: "#fff", borderRadius: 16,
+    padding: 16, marginBottom: 16, elevation: 3,
   },
+  cardIcon: { fontSize: 32, marginBottom: 8 },
+  cardContent: { marginBottom: 14 },
+  cardTitle: { fontSize: 17, fontWeight: "bold", color: "#1a1a1a" },
+  cardDesc: { color: "#888", marginTop: 4, fontSize: 13 },
+  cardBtn: { borderRadius: 10, alignSelf: "flex-start" },
 });

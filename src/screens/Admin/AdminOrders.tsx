@@ -4,7 +4,6 @@ import { Text, Chip, ActivityIndicator, Divider } from "react-native-paper";
 import { db } from "../../services/firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 
-// ✅ safely parse items whether stored as string or array
 const parseItems = (raw: any): any[] => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -26,31 +25,41 @@ export default function AdminOrders() {
     })();
   }, []);
 
-  if (loading) return <ActivityIndicator style={{ flex: 1, marginTop: 40 }} />;
+  if (loading) return <ActivityIndicator color="purple" style={{ flex: 1, marginTop: 40 }} />;
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.heading}>Orders ({orders.length})</Text>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Orders</Text>
+        <Text style={styles.headerSub}>{orders.length} order{orders.length !== 1 ? "s" : ""} total</Text>
+      </View>
 
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16 }}
         renderItem={({ item }) => {
-          const items = parseItems(item.items); // ✅ safe parse
+          const items = parseItems(item.items);
           return (
             <View style={styles.card}>
+
+              {/* Customer + total */}
               <View style={styles.row}>
                 <Text style={styles.customerName}>{item.name} {item.surname}</Text>
-                <Chip compact style={styles.chip}>R {item.total}</Chip>
+                <Chip compact style={styles.chip} textStyle={styles.chipText}>
+                  R {item.total}
+                </Chip>
               </View>
 
               <Text style={styles.meta}>📧 {item.email}</Text>
               <Text style={styles.meta}>📞 {item.phone}</Text>
               <Text style={styles.meta}>📍 {item.address}</Text>
 
-              <Divider style={{ marginVertical: 8 }} />
+              <Divider style={styles.divider} />
 
-              <Text style={styles.itemsLabel}>Items:</Text>
+              <Text style={styles.itemsLabel}>Items Ordered</Text>
               {items.map((i: any, idx: number) => (
                 <View key={idx} style={styles.itemRow}>
                   <Text style={styles.itemName}>{i.name} x{i.qty}</Text>
@@ -74,16 +83,26 @@ export default function AdminOrders() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  heading: { marginBottom: 14, fontWeight: "bold" },
-  card: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 14, marginBottom: 14 },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  customerName: { fontSize: 16, fontWeight: "bold" },
-  chip: { backgroundColor: "#e8f5e9" },
-  meta: { color: "#555", marginTop: 4, fontSize: 13 },
-  itemsLabel: { fontWeight: "bold", marginBottom: 4 },
-  itemRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55, paddingBottom: 24, paddingHorizontal: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },
+  card: {
+    backgroundColor: "#fff", borderRadius: 16,
+    padding: 16, marginBottom: 14, elevation: 3,
+  },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  customerName: { fontSize: 16, fontWeight: "bold", color: "#1a1a1a" },
+  chip: { backgroundColor: "purple" },
+  chipText: { color: "#fff", fontWeight: "bold" },
+  meta: { color: "#555", fontSize: 13, marginBottom: 2 },
+  divider: { backgroundColor: "#f0e6ff", marginVertical: 10 },
+  itemsLabel: { fontWeight: "bold", fontSize: 13, color: "purple", marginBottom: 6 },
+  itemRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   itemName: { color: "#333" },
-  itemPrice: { fontWeight: "bold" },
+  itemPrice: { fontWeight: "bold", color: "purple" },
   date: { color: "#aaa", fontSize: 12, marginTop: 8 },
 });

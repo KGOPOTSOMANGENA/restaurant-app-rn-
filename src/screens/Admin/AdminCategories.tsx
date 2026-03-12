@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, FlatList } from "react-native";
+import { View, FlatList, StyleSheet } from "react-native";
 import { Text, TextInput, Button, IconButton } from "react-native-paper";
 import { db } from "../../services/firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 export default function AdminCategories() {
   const [cats, setCats] = useState<any[]>([]);
@@ -19,9 +13,7 @@ export default function AdminCategories() {
     setCats(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const save = async () => {
     if (!name.trim()) return;
@@ -31,40 +23,80 @@ export default function AdminCategories() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text variant="headlineMedium">Categories</Text>
+    <View style={styles.container}>
 
-      <View style={{ flexDirection: "row", marginTop: 10 }}>
-        <TextInput
-          placeholder="Category name"
-          value={name}
-          onChangeText={setName}
-          style={{ flex: 1 }}
-        />
-        <Button onPress={save}>Add</Button>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Categories</Text>
+        <Text style={styles.headerSub}>{cats.length} categories</Text>
       </View>
 
-      <FlatList
-        contentContainerStyle={{ marginTop: 16 }}
-        data={cats}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View
-            style={{
-              flexDirection: "row",
-              padding: 10,
-              borderBottomWidth: 1,
-              borderColor: "#ccc",
-            }}
+      <View style={styles.body}>
+        {/* Add category */}
+        <View style={styles.addBox}>
+          <TextInput
+            placeholder="Category name"
+            value={name}
+            onChangeText={setName}
+            mode="outlined"
+            style={styles.input}
+            outlineColor="#ddd"
+            activeOutlineColor="purple"
+          />
+          <Button
+            mode="contained"
+            onPress={save}
+            buttonColor="purple"
+            style={styles.addBtn}
+            contentStyle={{ paddingVertical: 6 }}
           >
-            <Text style={{ flex: 1 }}>{item.name}</Text>
-            <IconButton
-              icon="delete"
-              onPress={() => deleteDoc(doc(db, "categories", item.id)).then(load)}
-            />
-          </View>
-        )}
-      />
+            Add
+          </Button>
+        </View>
+
+        {/* List */}
+        <FlatList
+          data={cats}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.catRow}>
+              <View style={styles.catDot} />
+              <Text style={styles.catName}>{item.name}</Text>
+              <IconButton
+                icon="delete"
+                iconColor="purple"
+                size={20}
+                onPress={() => deleteDoc(doc(db, "categories", item.id)).then(load)}
+              />
+            </View>
+          )}
+        />
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55, paddingBottom: 24, paddingHorizontal: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },
+  body: { padding: 16 },
+  addBox: { flexDirection: "row", gap: 10, marginBottom: 16, alignItems: "center" },
+  input: { flex: 1, backgroundColor: "#fff" },
+  addBtn: { borderRadius: 10 },
+  catRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#fff", borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 4,
+    marginBottom: 10, elevation: 2,
+  },
+  catDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: "purple", marginRight: 12,
+  },
+  catName: { flex: 1, fontSize: 15, color: "#333" },
+});

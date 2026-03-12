@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, Image } from "react-native";
-import { Text, TextInput, Button, Chip, Snackbar } from "react-native-paper";
+import { View, ScrollView, Image, StyleSheet } from "react-native";
+import { Text, TextInput, Button, Chip, Snackbar, IconButton, Divider } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -21,12 +21,14 @@ export default function AdminMenuForm() {
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [extras, setExtras] = useState<{ name: string; price: string }[]>([]);
+  const [extraName, setExtraName] = useState("");
+  const [extraPrice, setExtraPrice] = useState("");
 
   useEffect(() => {
     (async () => {
       const catSnap = await getDocs(collection(db, "categories"));
       setCategories(catSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-
       if (editId) {
         const snap = await getDoc(doc(db, "menuItems", editId));
         const data: any = snap.data();
@@ -35,41 +37,37 @@ export default function AdminMenuForm() {
         setPrice(String(data.price));
         setCategoryId(data.categoryId);
         setImg(data.imageUrl);
+        setExtras(data.extras || []);
       }
     })();
   }, []);
 
+  const addExtra = () => {
+    if (!extraName || !extraPrice) { alert("Please enter extra name and price."); return; }
+    setExtras((prev) => [...prev, { name: extraName, price: extraPrice }]);
+    setExtraName("");
+    setExtraPrice("");
+  };
+
+  const removeExtra = (index: number) => {
+    setExtras((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permission required to access images.");
-      return;
-    }
-
-    // ✅ FIX 1: Correct API — no MediaType.Images (this was your crash)
+    if (status !== "granted") { alert("Permission required to access images."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1, // We'll compress manually below
+      mediaTypes: "images", allowsEditing: true, aspect: [4, 3], quality: 1,
     });
-
     if (!result.canceled) {
       setProcessing(true);
       try {
-        // ✅ FIX 2: Resize + compress so base64 stays under Firestore's 1MB limit
         const manipulated = await ImageManipulator.manipulateAsync(
           result.assets[0].uri,
-          [{ resize: { width: 400 } }], // shrink to 400px wide
-          {
-            compress: 0.5,              // 50% quality
-            format: ImageManipulator.SaveFormat.JPEG,
-            base64: true,
-          }
+          [{ resize: { width: 400 } }],
+          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
         );
-
-        const base64Img = `data:image/jpeg;base64,${manipulated.base64}`;
-        setImg(base64Img);
+        setImg(`data:image/jpeg;base64,${manipulated.base64}`);
       } catch (e: any) {
         alert("Failed to process image: " + e.message);
       } finally {
@@ -79,31 +77,17 @@ export default function AdminMenuForm() {
   };
 
   const save = async () => {
-    if (!name || !price || !categoryId) {
-      alert("Please fill all required fields.");
-      return;
-    }
-
+    if (!name || !price || !categoryId) { alert("Please fill all required fields."); return; }
     setSaving(true);
-
     const data = {
-      name,
-      description: desc,
-      price: Number(price),
-      imageUrl: img,
-      categoryId,
-      active: true,
-      updatedAt: now(),
+      name, description: desc, price: Number(price),
+      imageUrl: img, categoryId, active: true, updatedAt: now(),
+      extras: extras.map((e) => ({ name: e.name, price: Number(e.price) })),
       ...(editId ? {} : { createdAt: now() }),
     };
-
     try {
-      if (editId) {
-        await updateDoc(doc(db, "menuItems", editId), data);
-      } else {
-        await addDoc(collection(db, "menuItems"), data);
-      }
-
+      if (editId) { await updateDoc(doc(db, "menuItems", editId), data); }
+      else { await addDoc(collection(db, "menuItems"), data); }
       setSnackbarVisible(true);
       setTimeout(() => nav.goBack(), 1000);
     } catch (e: any) {
@@ -114,45 +98,136 @@ export default function AdminMenuForm() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16 }}>
-      <Text variant="headlineSmall">{editId ? "Edit Item" : "Add New Item"}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      <TextInput label="Name" value={name} onChangeText={setName} style={{ marginTop: 10 }} />
-      <TextInput label="Description" value={desc} onChangeText={setDesc} multiline style={{ marginTop: 10 }} />
-      <TextInput label="Price" value={price} onChangeText={setPrice} keyboardType="numeric" style={{ marginTop: 10 }} />
-
-      <Text style={{ marginTop: 14 }}>Category</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
-        {categories.map((c) => (
-          <Chip key={c.id} onPress={() => setCategoryId(c.id)} selected={categoryId === c.id} style={{ marginRight: 6 }}>
-            {c.name}
-          </Chip>
-        ))}
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{editId ? "Edit Item" : "Add New Item"}</Text>
       </View>
 
-      {img && (
-        <Image source={{ uri: img }} style={{ width: "100%", height: 200, marginTop: 20, borderRadius: 10 }} />
-      )}
+      <View style={styles.body}>
 
-      <Button
-        mode="outlined"
-        onPress={pickImage}
-        style={{ marginTop: 10 }}
-        loading={processing}
-        disabled={saving || processing}
-      >
-        {processing ? "Processing..." : img ? "Change Image" : "Choose Image"}
-      </Button>
+        {/* Basic info */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Item Details</Text>
 
-      <Button
-        mode="contained"
-        onPress={save}
-        style={{ marginTop: 20 }}
-        loading={saving}
-        disabled={saving || processing}
-      >
-        Save
-      </Button>
+          <Text style={styles.fieldLabel}>Name</Text>
+          <TextInput
+            value={name} onChangeText={setName}
+            mode="outlined" style={styles.input}
+            outlineColor="#ddd" activeOutlineColor="purple"
+          />
+
+          <Text style={styles.fieldLabel}>Description</Text>
+          <TextInput
+            value={desc} onChangeText={setDesc}
+            multiline mode="outlined" style={styles.input}
+            outlineColor="#ddd" activeOutlineColor="purple"
+          />
+
+          <Text style={styles.fieldLabel}>Price (R)</Text>
+          <TextInput
+            value={price} onChangeText={setPrice}
+            keyboardType="numeric" mode="outlined" style={styles.input}
+            outlineColor="#ddd" activeOutlineColor="purple"
+          />
+        </View>
+
+        {/* Category */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Category</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
+            {categories.map((c) => (
+              <Chip
+                key={c.id}
+                onPress={() => setCategoryId(c.id)}
+                selected={categoryId === c.id}
+                style={[styles.chip, categoryId === c.id && styles.chipSelected]}
+                textStyle={categoryId === c.id ? styles.chipTextSelected : styles.chipText}
+              >
+                {c.name}
+              </Chip>
+            ))}
+          </View>
+        </View>
+
+        {/* Image */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Item Image</Text>
+          {img && (
+            <Image source={{ uri: img }} style={styles.previewImg} />
+          )}
+          <Button
+            mode="outlined"
+            onPress={pickImage}
+            loading={processing}
+            disabled={saving || processing}
+            textColor="purple"
+            style={styles.outlineBtn}
+            icon="image"
+          >
+            {processing ? "Processing..." : img ? "Change Image" : "Choose Image"}
+          </Button>
+        </View>
+
+        {/* Extras */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Extras (optional)</Text>
+
+          {extras.map((e, index) => (
+            <View key={index} style={styles.extraItem}>
+              <Text style={styles.extraItemText}>• {e.name} — R {e.price}</Text>
+              <IconButton icon="delete" iconColor="#e74c3c" size={18} onPress={() => removeExtra(index)} />
+            </View>
+          ))}
+
+          <View style={styles.extraInputRow}>
+            <TextInput
+              label="Extra name"
+              value={extraName}
+              onChangeText={setExtraName}
+              mode="outlined"
+              style={[styles.input, { flex: 2 }]}
+              outlineColor="#ddd"
+              activeOutlineColor="purple"
+            />
+            <TextInput
+              label="Price"
+              value={extraPrice}
+              onChangeText={setExtraPrice}
+              keyboardType="numeric"
+              mode="outlined"
+              style={[styles.input, { flex: 1 }]}
+              outlineColor="#ddd"
+              activeOutlineColor="purple"
+            />
+          </View>
+
+          <Button
+            mode="outlined"
+            onPress={addExtra}
+            icon="plus"
+            textColor="purple"
+            style={styles.outlineBtn}
+          >
+            Add Extra
+          </Button>
+        </View>
+
+        {/* Save */}
+        <Button
+          mode="contained"
+          onPress={save}
+          loading={saving}
+          disabled={saving || processing}
+          buttonColor="purple"
+          style={styles.saveBtn}
+          contentStyle={{ paddingVertical: 8 }}
+        >
+          {editId ? "Update Item" : "Save Item"}
+        </Button>
+
+      </View>
 
       <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={1000}>
         Item {editId ? "updated" : "added"} successfully!
@@ -160,3 +235,30 @@ export default function AdminMenuForm() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55, paddingBottom: 24, paddingHorizontal: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  body: { padding: 16 },
+  card: {
+    backgroundColor: "#fff", borderRadius: 16,
+    padding: 16, marginBottom: 16, elevation: 3,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: "bold", color: "purple", marginBottom: 10 },
+  fieldLabel: { fontSize: 13, color: "#555", marginBottom: 4, marginTop: 8 },
+  input: { backgroundColor: "#fff", marginBottom: 4 },
+  chip: { marginRight: 6, marginBottom: 6, backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd" },
+  chipSelected: { backgroundColor: "purple", borderColor: "purple" },
+  chipText: { color: "#555" },
+  chipTextSelected: { color: "#fff" },
+  previewImg: { width: "100%", height: 200, borderRadius: 10, marginBottom: 12 },
+  outlineBtn: { borderColor: "purple", borderRadius: 10, marginTop: 4 },
+  extraItem: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  extraItemText: { flex: 1, color: "#333" },
+  extraInputRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  saveBtn: { borderRadius: 12, marginBottom: 20 },
+});

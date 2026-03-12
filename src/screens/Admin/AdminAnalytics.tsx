@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { Text, Card, ActivityIndicator, Divider } from "react-native-paper";
+import { Text, ActivityIndicator, Divider } from "react-native-paper";
 import { db } from "../../services/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-// ✅ same safe parser
 const parseItems = (raw: any): any[] => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -35,7 +34,6 @@ export default function AdminAnalytics() {
       setTotalRevenue(revenue);
       setTotalMenuItems(menuSnap.size);
 
-      // ✅ safe parse items before looping
       const countMap: Record<string, number> = {};
       orders.forEach((o) => {
         parseItems(o.items).forEach((i: any) => {
@@ -53,65 +51,125 @@ export default function AdminAnalytics() {
     })();
   }, []);
 
-  if (loading) return <ActivityIndicator style={{ flex: 1, marginTop: 40 }} />;
+  if (loading) return <ActivityIndicator color="purple" style={{ flex: 1, marginTop: 40 }} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text variant="headlineMedium" style={styles.heading}>Analytics</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      <View style={styles.statsRow}>
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statNumber}>{totalOrders}</Text>
-            <Text style={styles.statLabel}>Total Orders</Text>
-          </Card.Content>
-        </Card>
-
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statNumber}>R {totalRevenue}</Text>
-            <Text style={styles.statLabel}>Revenue</Text>
-          </Card.Content>
-        </Card>
-
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statNumber}>{totalMenuItems}</Text>
-            <Text style={styles.statLabel}>Menu Items</Text>
-          </Card.Content>
-        </Card>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Analytics</Text>
+        <Text style={styles.headerSub}>Sales overview</Text>
       </View>
 
-      <Divider style={{ marginVertical: 20 }} />
+      <View style={styles.body}>
 
-      <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: "bold" }}>
-        🏆 Top Selling Items
-      </Text>
-
-      {topItems.length === 0 ? (
-        <Text style={{ color: "#aaa" }}>No orders yet</Text>
-      ) : (
-        topItems.map((item, index) => (
-          <View key={item.name} style={styles.topItem}>
-            <Text style={styles.rank}>#{index + 1}</Text>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemQty}>{item.qty} sold</Text>
+        {/* Stat cards */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statIcon}>📦</Text>
+            <Text style={styles.statNumber}>{totalOrders}</Text>
+            <Text style={styles.statLabel}>Total Orders</Text>
           </View>
-        ))
-      )}
+
+          <View style={styles.statCard}>
+            <Text style={styles.statIcon}>💰</Text>
+            <Text style={styles.statNumber}>R {totalRevenue}</Text>
+            <Text style={styles.statLabel}>Revenue</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statIcon}>🍽️</Text>
+            <Text style={styles.statNumber}>{totalMenuItems}</Text>
+            <Text style={styles.statLabel}>Menu Items</Text>
+          </View>
+        </View>
+
+        <Divider style={styles.divider} />
+
+        {/* Top selling */}
+        <Text style={styles.sectionTitle}>🏆 Top Selling Items</Text>
+
+        {topItems.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>No orders yet</Text>
+          </View>
+        ) : (
+          topItems.map((item, index) => (
+            <View key={item.name} style={styles.topItem}>
+              {/* Rank badge */}
+              <View style={[
+                styles.rankBadge,
+                index === 0 && { backgroundColor: "#FFD700" },
+                index === 1 && { backgroundColor: "#C0C0C0" },
+                index === 2 && { backgroundColor: "#CD7F32" },
+              ]}>
+                <Text style={styles.rankText}>#{index + 1}</Text>
+              </View>
+
+              <Text style={styles.itemName}>{item.name}</Text>
+
+              <View style={styles.soldBadge}>
+                <Text style={styles.soldText}>{item.qty} sold</Text>
+              </View>
+            </View>
+          ))
+        )}
+
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  heading: { marginBottom: 20, fontWeight: "bold" },
-  statsRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  statCard: { flex: 1, borderRadius: 12 },
-  statNumber: { fontSize: 20, fontWeight: "bold", color: "#e74c3c" },
-  statLabel: { fontSize: 12, color: "#777", marginTop: 4 },
-  topItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#eee" },
-  rank: { fontSize: 16, fontWeight: "bold", width: 32, color: "#e74c3c" },
-  itemName: { flex: 1, fontSize: 15 },
-  itemQty: { color: "#888", fontSize: 13 },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+
+  // Header
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55, paddingBottom: 30, paddingHorizontal: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },
+
+  body: { padding: 16 },
+
+  // Stats
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
+  statCard: {
+    flex: 1, backgroundColor: "#fff", borderRadius: 16,
+    padding: 14, alignItems: "center", elevation: 3,
+  },
+  statIcon: { fontSize: 28, marginBottom: 8 },
+  statNumber: { fontSize: 18, fontWeight: "bold", color: "purple" },
+  statLabel: { fontSize: 11, color: "#888", marginTop: 4, textAlign: "center" },
+
+  divider: { backgroundColor: "#f0e6ff", marginVertical: 20 },
+
+  // Top items
+  sectionTitle: {
+    fontSize: 16, fontWeight: "bold", color: "purple",
+    marginBottom: 14,
+  },
+  emptyBox: { alignItems: "center", marginTop: 20 },
+  emptyText: { color: "#aaa", fontSize: 15 },
+
+  topItem: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#fff", borderRadius: 14,
+    padding: 14, marginBottom: 10, elevation: 2,
+  },
+  rankBadge: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: "purple",
+    justifyContent: "center", alignItems: "center",
+    marginRight: 12,
+  },
+  rankText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
+  itemName: { flex: 1, fontSize: 15, color: "#1a1a1a", fontWeight: "500" },
+  soldBadge: {
+    backgroundColor: "#f0e6ff", borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  soldText: { color: "purple", fontWeight: "bold", fontSize: 13 },
 });

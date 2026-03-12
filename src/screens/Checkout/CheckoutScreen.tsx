@@ -14,16 +14,10 @@ type Profile = {
   cardNumber?: string;
 };
 
-// ✅ Format card number with spaces: 4242 4242 4242 4242
 const formatCardNumber = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .slice(0, 16)
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
+  return value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
 };
 
-// ✅ Format expiry: 12/26
 const formatExpiry = (value: string) => {
   const clean = value.replace(/\D/g, "").slice(0, 4);
   if (clean.length >= 3) return clean.slice(0, 2) + "/" + clean.slice(2);
@@ -37,16 +31,13 @@ export default function CheckoutScreen() {
   const [placing, setPlacing] = useState(false);
   const user = auth.currentUser;
 
-  // Card fields
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [cardError, setCardError] = useState("");
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  useEffect(() => { loadProfile(); }, []);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -55,7 +46,6 @@ export default function CheckoutScreen() {
       const data = snap.data() as Profile;
       setProfile(data);
       setAddress(data.address || "");
-      // Pre-fill card name from profile
       setCardName(`${data.name ?? ""} ${data.surname ?? ""}`.trim());
     }
   };
@@ -74,12 +64,9 @@ export default function CheckoutScreen() {
     if (!user) { alert("You must login first"); return; }
     if (!address) { alert("Please enter a delivery address"); return; }
     if (!validateCard()) return;
-
     setPlacing(true);
     try {
-      // Mock payment processing delay
       await new Promise((res) => setTimeout(res, 1500));
-
       await addDoc(collection(db, "orders"), {
         uid: user.uid,
         name: profile?.name ?? "",
@@ -87,17 +74,12 @@ export default function CheckoutScreen() {
         email: profile?.email ?? user.email ?? "",
         phone: profile?.phone ?? "",
         address,
-        items: cart.map((i: any) => ({
-          name: i.name,
-          price: i.price,
-          qty: i.qty,
-        })),
+        items: cart.map((i: any) => ({ name: i.name, price: i.price, qty: i.qty })),
         total,
         paymentMethod: "card",
-        cardLast4: cardNumber.replace(/\s/g, "").slice(-4), // save only last 4 digits
+        cardLast4: cardNumber.replace(/\s/g, "").slice(-4),
         createdAt: new Date(),
       });
-
       clearCart();
       alert("✅ Payment successful! Your order has been placed.");
     } catch (e: any) {
@@ -108,153 +90,208 @@ export default function CheckoutScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      {/* Order Items */}
-      <Text variant="headlineSmall" style={styles.heading}>Your Order</Text>
+      {/* Purple header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Checkout</Text>
+        <Text style={styles.headerSub}>{cart.length} item{cart.length !== 1 ? "s" : ""} · R {total}</Text>
+      </View>
 
-      {cart.map((item: any) => (
-        <View key={item.id} style={styles.card}>
-          <Image source={{ uri: item.imageUrl }} style={styles.image} />
-          <View style={styles.info}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.qty}>x{item.qty}</Text>
-              <Text style={styles.price}>R {item.price * item.qty}</Text>
+      <View style={styles.body}>
+
+        {/* Order items */}
+        <Text style={styles.sectionTitle}>🛍️ Your Order</Text>
+        {cart.map((item: any) => (
+          <View key={item.id} style={styles.card}>
+            <Image source={{ uri: item.imageUrl }} style={styles.image} />
+            <View style={styles.info}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.qty}>x{item.qty}</Text>
+                <Text style={styles.itemPrice}>R {item.price * item.qty}</Text>
+              </View>
             </View>
           </View>
+        ))}
+
+        {/* Total */}
+        <View style={styles.totalBox}>
+          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalAmount}>R {total}</Text>
         </View>
-      ))}
 
-      <Divider style={{ marginVertical: 16 }} />
+        <Divider style={styles.divider} />
 
-      <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalAmount}>R {total}</Text>
-      </View>
-
-      <Divider style={{ marginVertical: 16 }} />
-
-      {/* Delivery */}
-      <Text variant="titleMedium" style={styles.sectionTitle}>📍 Delivery Address</Text>
-      <TextInput
-        label="Delivery Address"
-        value={address}
-        onChangeText={setAddress}
-        style={styles.input}
-      />
-
-      <Divider style={{ marginVertical: 16 }} />
-
-      {/* Stripe Mock Card Form */}
-      <View style={styles.stripeHeader}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>💳 Pay with Card</Text>
-        <View style={styles.stripeBadge}>
-          <Text style={styles.stripeBadgeText}>Powered by Stripe</Text>
-        </View>
-      </View>
-
-      <View style={styles.stripeCard}>
-        {/* Card number */}
+        {/* Delivery address */}
+        <Text style={styles.sectionTitle}>📍 Delivery Address</Text>
         <TextInput
-          label="Card Number"
-          value={cardNumber}
-          onChangeText={(v) => setCardNumber(formatCardNumber(v))}
-          keyboardType="numeric"
-          placeholder="4242 4242 4242 4242"
-          maxLength={19}
+          label="Delivery Address"
+          value={address}
+          onChangeText={setAddress}
+          mode="outlined"
           style={styles.input}
-          left={<TextInput.Icon icon="credit-card" />}
+          outlineColor="#ddd"
+          activeOutlineColor="purple"
+          left={<TextInput.Icon icon="map-marker-outline" color="purple" />}
         />
 
-        {/* Name on card */}
-        <TextInput
-          label="Name on Card"
-          value={cardName}
-          onChangeText={setCardName}
-          style={styles.input}
-          left={<TextInput.Icon icon="account" />}
-        />
+        <Divider style={styles.divider} />
 
-        {/* Expiry + CVV side by side */}
-        <View style={styles.row}>
-          <TextInput
-            label="MM/YY"
-            value={expiry}
-            onChangeText={(v) => setExpiry(formatExpiry(v))}
-            keyboardType="numeric"
-            maxLength={5}
-            style={[styles.input, styles.halfInput]}
-            left={<TextInput.Icon icon="calendar" />}
-          />
-          <TextInput
-            label="CVV"
-            value={cvv}
-            onChangeText={(v) => setCvv(v.replace(/\D/g, "").slice(0, 3))}
-            keyboardType="numeric"
-            maxLength={3}
-            secureTextEntry
-            style={[styles.input, styles.halfInput]}
-            left={<TextInput.Icon icon="lock" />}
-          />
+        {/* Stripe card form */}
+        <View style={styles.stripeHeader}>
+          <Text style={styles.sectionTitle}>💳 Pay with Card</Text>
+          <View style={styles.stripeBadge}>
+            <Text style={styles.stripeBadgeText}>Powered by Stripe</Text>
+          </View>
         </View>
 
-        {/* Inline error */}
-        {cardError ? <Text style={styles.error}>{cardError}</Text> : null}
+        <View style={styles.stripeCard}>
+          <TextInput
+            label="Card Number"
+            value={cardNumber}
+            onChangeText={(v) => setCardNumber(formatCardNumber(v))}
+            keyboardType="numeric"
+            placeholder="4242 4242 4242 4242"
+            maxLength={19}
+            mode="outlined"
+            style={styles.input}
+            outlineColor="#ddd"
+            activeOutlineColor="purple"
+            left={<TextInput.Icon icon="credit-card" color="purple" />}
+          />
+
+          <TextInput
+            label="Name on Card"
+            value={cardName}
+            onChangeText={setCardName}
+            mode="outlined"
+            style={styles.input}
+            outlineColor="#ddd"
+            activeOutlineColor="purple"
+            left={<TextInput.Icon icon="account" color="purple" />}
+          />
+
+          <View style={styles.row}>
+            <TextInput
+              label="MM/YY"
+              value={expiry}
+              onChangeText={(v) => setExpiry(formatExpiry(v))}
+              keyboardType="numeric"
+              maxLength={5}
+              mode="outlined"
+              style={[styles.input, styles.halfInput]}
+              outlineColor="#ddd"
+              activeOutlineColor="purple"
+              left={<TextInput.Icon icon="calendar" color="purple" />}
+            />
+            <TextInput
+              label="CVV"
+              value={cvv}
+              onChangeText={(v) => setCvv(v.replace(/\D/g, "").slice(0, 3))}
+              keyboardType="numeric"
+              maxLength={3}
+              secureTextEntry
+              mode="outlined"
+              style={[styles.input, styles.halfInput]}
+              outlineColor="#ddd"
+              activeOutlineColor="purple"
+              left={<TextInput.Icon icon="lock" color="purple" />}
+            />
+          </View>
+
+          {cardError ? <Text style={styles.error}>{cardError}</Text> : null}
+        </View>
+
+        {/* Pay button */}
+        <Button
+          mode="contained"
+          onPress={placeOrder}
+          loading={placing}
+          disabled={placing}
+          buttonColor="purple"
+          style={styles.btn}
+          contentStyle={{ paddingVertical: 8 }}
+        >
+          {placing ? "Processing Payment..." : `Pay R ${total}`}
+        </Button>
+
+        <Text style={styles.secureNote}>🔒 Your payment info is secure and encrypted</Text>
+
       </View>
-
-      {/* Place Order Button */}
-      <Button
-        mode="contained"
-        onPress={placeOrder}
-        loading={placing}
-        disabled={placing}
-        style={styles.btn}
-        contentStyle={{ paddingVertical: 6 }}
-      >
-        {placing ? "Processing Payment..." : `Pay R ${total}`}
-      </Button>
-
-      <Text style={styles.secureNote}>🔒 Your payment info is secure and encrypted</Text>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  heading: { marginBottom: 16, fontWeight: "bold" },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+
+  // Header
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+  },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },
+
+  // Body
+  body: { padding: 16 },
+
+  // Section title
+  sectionTitle: { fontSize: 15, fontWeight: "bold", color: "purple", marginBottom: 12 },
+
+  // Order items
   card: {
-    flexDirection: "row", borderWidth: 1, borderColor: "#ddd",
-    borderRadius: 12, padding: 10, marginBottom: 12, alignItems: "center",
+    flexDirection: "row", backgroundColor: "#fff",
+    borderRadius: 12, padding: 10, marginBottom: 10,
+    elevation: 2,
   },
   image: { width: 80, height: 80, borderRadius: 10 },
   info: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 16, fontWeight: "bold" },
-  desc: { fontSize: 13, color: "#666", marginTop: 4 },
+  name: { fontSize: 15, fontWeight: "bold", color: "#1a1a1a" },
+  desc: { fontSize: 12, color: "#888", marginTop: 4 },
   priceRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  qty: { color: "#888" },
-  price: { fontWeight: "bold" },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  totalLabel: { fontSize: 18, fontWeight: "bold" },
-  totalAmount: { fontSize: 20, fontWeight: "bold", color: "#e74c3c" },
-  sectionTitle: { marginBottom: 10, fontWeight: "bold" },
+  qty: { color: "#aaa" },
+  itemPrice: { fontWeight: "bold", color: "purple" },
+
+  // Total
+  totalBox: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", backgroundColor: "#fff",
+    borderRadius: 12, padding: 16, marginBottom: 16,
+    elevation: 2,
+  },
+  totalLabel: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  totalAmount: { fontSize: 22, fontWeight: "bold", color: "purple" },
+
+  divider: { backgroundColor: "#f0e6ff", marginVertical: 16 },
+
+  // Inputs
   input: { marginBottom: 12, backgroundColor: "#fff" },
-  stripeHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  row: { flexDirection: "row", gap: 10 },
+  halfInput: { flex: 1 },
+
+  // Stripe
+  stripeHeader: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", marginBottom: 12,
+  },
   stripeBadge: {
-    backgroundColor: "#635bff", borderRadius: 6,
-    paddingHorizontal: 8, paddingVertical: 3,
+    backgroundColor: "purple", borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 4,
   },
   stripeBadgeText: { color: "#fff", fontSize: 11, fontWeight: "bold" },
   stripeCard: {
-    backgroundColor: "#f9f9f9", borderRadius: 14,
-    padding: 14, borderWidth: 1, borderColor: "#e0e0e0",
+    backgroundColor: "#f9f4ff", borderRadius: 14,
+    padding: 14, borderWidth: 1, borderColor: "#e8d5ff",
     marginBottom: 16,
   },
-  row: { flexDirection: "row", gap: 10 },
-  halfInput: { flex: 1 },
   error: { color: "#e74c3c", marginBottom: 8, fontSize: 13 },
-  btn: { borderRadius: 10, backgroundColor: "#635bff" },
-  secureNote: { textAlign: "center", color: "#aaa", fontSize: 12, marginTop: 12 },
+
+  // Button
+  btn: { borderRadius: 12, marginBottom: 12 },
+  secureNote: { textAlign: "center", color: "#aaa", fontSize: 12, marginBottom: 20 },
 });

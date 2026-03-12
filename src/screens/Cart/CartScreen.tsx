@@ -3,26 +3,35 @@ import { View, FlatList, Image, StyleSheet } from "react-native";
 import { Text, Button, Divider } from "react-native-paper";
 import { CartContext } from "../../store/CartContext";
 import { useNavigation } from "@react-navigation/native";
-import { useAuthStore } from "../../store/authStore"; // ✅ same source as RootNavigator
+import { useAuthStore } from "../../store/authStore";
 
 export default function CartScreen() {
   const { cart, total } = useContext(CartContext);
   const navigation = useNavigation<any>();
-  const user = useAuthStore((s) => s.user); // ✅ correct user state
+  const user = useAuthStore((s) => s.user);
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineSmall" style={styles.heading}>Your Cart</Text>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Your Cart</Text>
+        <Text style={styles.headerSub}>{cart.length} item{cart.length !== 1 ? "s" : ""}</Text>
+      </View>
 
       {cart.length === 0 ? (
-        <Text style={styles.empty}>Your cart is empty.</Text>
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyIcon}>🛒</Text>
+          <Text style={styles.emptyText}>Your cart is empty.</Text>
+        </View>
       ) : (
-        <>
+        <View style={styles.content}>
           <FlatList
             data={cart}
             keyExtractor={(item) => item.id}
+            scrollEnabled={false}
             renderItem={({ item }) => (
-              <View style={styles.row}>
+              <View style={styles.card}>
                 <Image source={{ uri: item.imageUrl }} style={styles.image} />
                 <View style={styles.info}>
                   <Text style={styles.name}>{item.name}</Text>
@@ -34,58 +43,91 @@ export default function CartScreen() {
             )}
           />
 
-          <Divider style={{ marginVertical: 12 }} />
+          <Divider style={styles.divider} />
 
+          {/* Total row */}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalAmount}>R {total}</Text>
           </View>
 
           {user ? (
-            //  Logged in — go to Checkout
             <Button
               mode="contained"
               onPress={() => navigation.navigate("Checkout")}
               style={styles.btn}
-              contentStyle={{ paddingVertical: 6 }}
+              buttonColor="purple"
+              contentStyle={{ paddingVertical: 8 }}
             >
-              Checkout
+              Proceed to Checkout
             </Button>
           ) : (
-            // Guest — locked, no navigation, no crash
             <Button
               mode="contained"
               disabled
               icon="lock"
               style={[styles.btn, { backgroundColor: "#ccc" }]}
-              contentStyle={{ paddingVertical: 6 }}
+              contentStyle={{ paddingVertical: 8 }}
             >
               Login to Checkout
             </Button>
           )}
-        </>
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  heading: { fontWeight: "bold", marginBottom: 16 },
-  empty: { color: "#aaa", textAlign: "center", marginTop: 40 },
-  row: {
-    flexDirection: "row", alignItems: "center",
-    borderWidth: 1, borderColor: "#eee",
-    borderRadius: 12, padding: 10, marginBottom: 12,
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+
+  // Header
+  header: {
+    backgroundColor: "purple",
+    paddingTop: 55,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
   },
-  image: { width: 70, height: 70, borderRadius: 10 },
+  headerTitle: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  headerSub: { color: "#e0c9f5", fontSize: 13, marginTop: 4 },
+
+  // Empty
+  emptyBox: { flex: 1, justifyContent: "center", alignItems: "center", marginTop: 80 },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyText: { color: "#aaa", fontSize: 16 },
+
+  // Content
+  content: {
+    backgroundColor: "#fff",
+    margin: 16,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 3,
+  },
+
+  // Card
+  card: {
+    flexDirection: "row", alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1, borderColor: "#f0e6ff",
+    marginBottom: 4,
+  },
+  image: { width: 70, height: 70, borderRadius: 12 },
   info: { flex: 1, marginLeft: 12 },
-  name: { fontWeight: "bold", fontSize: 15 },
-  desc: { color: "#888", fontSize: 12, marginTop: 2 },
-  price: { color: "#555", marginTop: 4 },
-  subtotal: { fontWeight: "bold", fontSize: 15 },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  totalLabel: { fontSize: 18, fontWeight: "bold" },
-  totalAmount: { fontSize: 18, fontWeight: "bold", color: "#e74c3c" },
-  btn: { borderRadius: 10, marginTop: 6 },
+  name: { fontWeight: "bold", fontSize: 15, color: "#1a1a1a" },
+  desc: { color: "#aaa", fontSize: 12, marginTop: 2 },
+  price: { color: "#888", marginTop: 4, fontSize: 13 },
+  subtotal: { fontWeight: "bold", fontSize: 15, color: "purple" },
+
+  // Total
+  divider: { backgroundColor: "#f0e6ff", marginVertical: 14 },
+  totalRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", marginBottom: 16,
+  },
+  totalLabel: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  totalAmount: { fontSize: 22, fontWeight: "bold", color: "purple" },
+
+  // Button
+  btn: { borderRadius: 12 },
 });

@@ -1,14 +1,17 @@
 import React, { useState, useContext } from "react";
-import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Image, ScrollView, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Text, Button, Checkbox } from "react-native-paper";
 import { CartContext } from "../../store/CartContext";
+import { useNavigation } from "@react-navigation/native";
 
-export default function AddToCartScreen({ route, navigation }: any) {
+export default function AddToCartScreen({ route }: any) {
   const { item } = route.params;
-  const { addToCart } = useContext(CartContext);
+  const { addToCart, cart } = useContext(CartContext);
+  const navigation = useNavigation<any>();
 
   const [qty, setQty] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<any[]>([]);
+  const [added, setAdded] = useState(false);
 
   const increase = () => setQty(qty + 1);
   const decrease = () => { if (qty > 1) setQty(qty - 1); };
@@ -26,19 +29,37 @@ export default function AddToCartScreen({ route, navigation }: any) {
 
   const addItem = () => {
     addToCart(item, qty, selectedExtras);
-    navigation.navigate("Cart");
+    //  Show added state briefly then reset — user stays on screen to keep browsing
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+    setQty(1);
+    setSelectedExtras([]);
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-      {/* Full width image */}
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      {/* Full width image with back button */}
+      <View>
+        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+
+        {/*  Cart count pill on image */}
+        {cart.length > 0 && (
+          <TouchableOpacity
+            style={styles.cartPill}
+            onPress={() => navigation.navigate("Cart")}
+          >
+            <Text style={styles.cartPillText}>🛒 {cart.length} in cart — View</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Content */}
       <View style={styles.content}>
 
-        {/* Name + description */}
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.desc}>{item.description}</Text>
 
@@ -78,20 +99,34 @@ export default function AddToCartScreen({ route, navigation }: any) {
               <Text style={styles.qtyBtnText}>+</Text>
             </TouchableOpacity>
           </View>
-
           <Text style={styles.price}>R {totalPrice}</Text>
         </View>
 
-        {/* Add to cart button */}
+        {/* Add to cart button — changes to green tick when added */}
         <Button
           mode="contained"
           onPress={addItem}
           style={styles.btn}
-          buttonColor="purple"
+          buttonColor={added ? "#2ecc71" : "purple"}
           contentStyle={{ paddingVertical: 6 }}
+          icon={added ? "check" : "cart-plus"}
         >
-          Add To Cart
+          {added ? "Added to Cart!" : "Add To Cart"}
         </Button>
+
+        {/* View cart button — only shows when cart has items */}
+        {cart.length > 0 && (
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate("Cart")}
+            style={styles.viewCartBtn}
+            textColor="purple"
+            contentStyle={{ paddingVertical: 6 }}
+            icon="cart"
+          >
+            View Cart ({cart.length} item{cart.length !== 1 ? "s" : ""}) — R {cart.reduce((s: number, i: any) => s + i.price * i.qty, 0)}
+          </Button>
+        )}
 
       </View>
     </ScrollView>
@@ -103,6 +138,27 @@ const styles = StyleSheet.create({
 
   // Image
   image: { width: "100%", height: 260, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+
+  // Back button overlaid on image
+  backBtn: {
+    position: "absolute",
+    top: 44, left: 16,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 20,
+    width: 38, height: 38,
+    justifyContent: "center", alignItems: "center",
+  },
+  backArrow: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+
+  // Cart pill overlaid on image
+  cartPill: {
+    position: "absolute",
+    bottom: 16, right: 16,
+    backgroundColor: "purple",
+    borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 6,
+  },
+  cartPillText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
 
   // Content
   content: {
@@ -129,10 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1, borderColor: "#eee",
   },
-  extraRowSelected: {
-    backgroundColor: "#f0e6ff",
-    borderColor: "purple",
-  },
+  extraRowSelected: { backgroundColor: "#f0e6ff", borderColor: "purple" },
   extraName: { flex: 1, fontSize: 14, color: "#333", marginLeft: 4 },
   extraPrice: { fontWeight: "bold", color: "purple" },
 
@@ -153,6 +206,10 @@ const styles = StyleSheet.create({
   qty: { marginHorizontal: 16, fontSize: 18, fontWeight: "bold", color: "#333" },
   price: { fontSize: 24, fontWeight: "bold", color: "purple" },
 
-  // Button
+  // Buttons
   btn: { marginTop: 20, borderRadius: 10 },
+  viewCartBtn: {
+    marginTop: 10, borderRadius: 10,
+    borderColor: "purple", borderWidth: 1.5,
+  },
 });

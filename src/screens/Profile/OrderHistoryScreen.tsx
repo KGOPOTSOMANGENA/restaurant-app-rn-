@@ -48,7 +48,7 @@ export default function OrderHistoryScreen() {
       {/* Header */}
       <View style={styles.header}>
 
-        {/* ✅ Back button */}
+        {/* Back button */}
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>

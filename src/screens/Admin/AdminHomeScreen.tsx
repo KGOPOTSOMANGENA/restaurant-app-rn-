@@ -64,7 +64,7 @@ export default function AdminHomeScreen() {
             <Text style={styles.headerSub}>Welcome back, Admin 👋</Text>
           </View>
 
-          {/* ✅ Logout button */}
+          {/* Logout button */}
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
             <Text style={styles.logoutIcon}>⏻</Text>
             <Text style={styles.logoutText}>Logout</Text>
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: "#fff", fontSize: 26, fontWeight: "bold" },
   headerSub: { color: "#e0c9f5", fontSize: 14, marginTop: 4 },
 
-  // ✅ Logout button
+  // Logout button
   logoutBtn: {
     backgroundColor: "#ffffff22",
     borderRadius: 12,

@@ -52,7 +52,7 @@ export default function LandingPage() {
         <View style={styles.overlay} />
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Choose Your Favorite Food</Text>
-          {/* ✅ Search now navigates to MenuScreen with search term */}
+          {/* Search now navigates to MenuScreen with search term */}
           <View style={styles.searchRow}>
             <TextInput
               mode="outlined"
@@ -109,7 +109,7 @@ export default function LandingPage() {
         </ScrollView>
       </View>
 
-      {/* ✅ KIDS PLAYGROUND BLOG */}
+      {/* KIDS PLAYGROUND BLOG */}
       <View style={styles.section}>
         <Text variant="titleLarge" style={styles.sectionTitle}>Kids Playground 🎠</Text>
         <Text style={styles.blogIntro}>
@@ -141,7 +141,7 @@ export default function LandingPage() {
         </View>
       </View>
 
-      {/* ✅ OUR LOCATION */}
+      {/* OUR LOCATION */}
       <View style={styles.section}>
         <Text variant="titleLarge" style={styles.sectionTitle}>Our Location</Text>
         <View style={styles.locationBox}>
@@ -154,7 +154,7 @@ export default function LandingPage() {
           </Text>
         </View>
 
-        {/* ✅ Opening hours */}
+        {/*  Opening hours */}
         <View style={styles.hoursBox}>
           <Text style={styles.hoursTitle}>🕐 Opening Hours</Text>
           {[

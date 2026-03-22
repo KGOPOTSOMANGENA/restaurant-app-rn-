@@ -5,7 +5,7 @@ export const CartContext = createContext<any>(null);
 export const CartProvider = ({ children }: any) => {
   const [cart, setCart] = useState<any[]>([]);
 
-  // ✅ extras passed in and stored with each cart item
+  // extras passed in and stored with each cart item
   const addToCart = (item: any, qty: number, extras: any[] = []) => {
     const extrasTotal = extras.reduce((sum: number, e: any) => sum + e.price, 0);
     setCart((prev) => [
@@ -14,7 +14,7 @@ export const CartProvider = ({ children }: any) => {
         ...item,
         qty,
         selectedExtras: extras,
-        // ✅ price per unit includes extras so CartScreen and CheckoutScreen stay unchanged
+        // price per unit includes extras so CartScreen and CheckoutScreen stay unchanged
         price: item.price + extrasTotal,
       },
     ]);

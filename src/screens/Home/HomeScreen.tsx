@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, FlatList, Image, TouchableOpacity, ScrollView, TextInput, StyleSheet } from "react-native";
 import { Text, Chip, ActivityIndicator } from "react-native-paper";
 import { db } from "../../services/firebase";
@@ -6,11 +6,13 @@ import { collection, getDocs } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { getAuth } from "firebase/auth";
 import { useAuthStore } from "../../store/authStore";
+import { CartContext } from "../../store/CartContext";
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const auth = getAuth();
   const user = useAuthStore((s) => s.user);
+  const { cart } = useContext(CartContext);
 
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
@@ -56,27 +58,45 @@ export default function HomeScreen() {
           <Text style={styles.headerTitle}>What are you craving?</Text>
         </View>
 
-        {/* Profile avatar — functionality unchanged */}
-        <TouchableOpacity
-          onPress={() => {
-            if (!auth.currentUser) navigation.navigate("Login");
-            else navigation.navigate("Profile");
-          }}
-          style={styles.avatarBtn}
-        >
-          {user?.name ? (
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitial}>
-                {user.name.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          ) : (
-            <Image
-              source={require("../../../assets/categories/profile_placeholder.png")}
-              style={styles.avatarImg}
-            />
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+
+          {/*  Trolley icon with item count badge */}
+          <TouchableOpacity
+            style={styles.cartBtn}
+            onPress={() => navigation.navigate("Cart")}
+          >
+            <Text style={styles.cartIcon}>🛒</Text>
+            {cart.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {cart.length > 9 ? "9+" : cart.length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Profile avatar */}
+          <TouchableOpacity
+            onPress={() => {
+              if (!auth.currentUser) navigation.navigate("Login");
+              else navigation.navigate("Profile");
+            }}
+            style={styles.avatarBtn}
+          >
+            {user?.name ? (
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarInitial}>
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            ) : (
+              <Image
+                source={require("../../../assets/categories/profile_placeholder.png")}
+                style={styles.avatarImg}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search bar */}
@@ -171,6 +191,32 @@ const styles = StyleSheet.create({
   },
   greeting: { color: "#e0c9f5", fontSize: 14 },
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold", marginTop: 2 },
+
+  // Header right side
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  // Cart trolley button
+  cartBtn: {
+    position: "relative",
+    width: 42, height: 42,
+    justifyContent: "center", alignItems: "center",
+  },
+  cartIcon: { fontSize: 24 },
+  badge: {
+    position: "absolute",
+    top: 0, right: 0,
+    backgroundColor: "#ff3b30",
+    borderRadius: 10,
+    minWidth: 18, height: 18,
+    justifyContent: "center", alignItems: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5, borderColor: "purple",
+  },
+  badgeText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
 
   // Avatar
   avatarBtn: { padding: 2 },
